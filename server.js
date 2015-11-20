@@ -1,7 +1,10 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var _ = require('underscore');
+
 var app = express();
 var PORT = process.env.PORT || 3000;
+
 
 var todos = [];
 var toDoNextId = 1;
@@ -17,17 +20,10 @@ app.get('/todos', function (req, res){
 //GET /todos/:id
 app.get('/todos/:id', function (req, res){
    var todoId = Number(req.params.id);      
-   var matchFound;
+   var matchedTodo = _.findWhere(todos, {id: todoId});
 
-   todos.forEach(function (todo){
-   		
-   		if (todo.id === todoId){
-   			matchFound = todo;   			
-   		}   		
-   });
-
-   if (matchFound) {   		
-   		res.json(matchFound);
+   if (matchedTodo) {   		
+   		res.json(matchedTodo);
    	} else {
    		res.status(404).send();
    }  
@@ -41,13 +37,27 @@ app.get('/', function (req, res){
 // needs body-parseer module to send JSON data with post
 app.post('/todos', function (req, res) {
 	var body = req.body;
-	todos.push(body);	
+	
+	if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
+		return res.status(400).send();
+	}
+	// Trims off preceeding and trailing spaces in user generated description
+	body.description = body.description.trim();
 
-	body.id = toDoNextId; 
+	// Gets rid of any other object keys that might get hacked in by hackers
+	var pickedBody = _.pick(body, "description", "completed");
+	
+	// Add this new filtered/picked code to the todos array
+	todos.push(pickedBody);	
+
+	
+	// Creates the id property and gives it a value
+	pickedBody.id = toDoNextId; 
+	
+	// Increase the value of id by 1 so that the next todo will have a different id
 	toDoNextId += 1;
-	//toDoNextId +=1;
-	console.log(toDoNextId + 'is the next ID');
-	console.log('description: ' + body.description);
+
+	// Send the new object as a POST
 	res.json(body);
 });
 
