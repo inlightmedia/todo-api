@@ -17,17 +17,28 @@ app.use(bodyParser.json()); //takes data posted and makes it JSON
 app.get('/todos', function (req, res){
 	var queryParams = req.query;      
    	var filteredTodos = todos;
-
-   	console.log(queryParams);
+   	//console.log(queryParams);
+   	var nowBoolean = ('true' == req.query.completed); //this converts the string 'true' to true and false to 'false'
    	
-   	if(req.query.hasOwnProperty('completed') && req.query.completed === 'true') {
-   		console.log('Woot!');
-   		filteredTodos = _.where(filteredTodos, {completed: true});
+
+   	if(req.query.hasOwnProperty('completed')) {   		
+   		// Makes the the query has the 'completed' property and that it is set to the string true
+   		// If this is the case it will set the variable filteredTodos to equal all the todos that have {completed: true}
+   		filteredTodos = _.where(filteredTodos, {completed: nowBoolean});
    	}
 
-   	if(req.query.hasOwnProperty('completed') && req.query.completed === 'false') {
-   		console.log('Woot!');
-   		filteredTodos = _.where(filteredTodos, {completed: false});
+   	// if(req.query.hasOwnProperty('completed') && req.query.completed === 'false') {
+   	// 	// Same as above but with 'false'
+   	// 	filteredTodos = _.where(filteredTodos, {completed: false});
+   	// }
+
+   	if(req.query.hasOwnProperty('q') && req.query.q.length > 0) {
+   		   		
+   		filteredTodos = _.filter(filteredTodos, function (object) {   			
+   			
+   			return object.description.toLowerCase().indexOf(req.query.q.toLowerCase()) > -1;   //indexOf only works with strings and returns a -1 if the string passed in is not in the string being parsed				
+   			
+   		});
    	} 
 
 	res.json(filteredTodos);
