@@ -72,12 +72,9 @@ app.delete('/todos/:id', function (req, res) {
 
 	if (matchedTodo) {   		
    		todos = _.without(todos, matchedTodo);   		
-   		res.json(matchedTodo);
-   		console.log('Yippee Found');
-   		res.status(200).send();
+   		res.json(matchedTodo);   		   		
    	} else {
-   		res.status(404).json({"error": "failed"});
-   		console.log('Hold on partner, that id does not exist!');
+   		res.status(404).json({"error": "Hold on partner, that id does not exist!"});   		
     }
 	// without() takes an array and the subsequent arguments is the things to be removed
 	
@@ -85,6 +82,41 @@ app.delete('/todos/:id', function (req, res) {
 
 	// Send back the new array with the matched object removed
 	
+});
+
+app.put('/todos/:id', function (req,res) {
+	var todoId = Number(req.params.id);      
+   	var matchedTodo = _.findWhere(todos, {id: todoId});
+	var body = _.pick(req.body, "description", "completed");
+	var validAttributes = {};
+
+	if (!matchedTodo) {
+		return res.status(404).json({"error":"Sorry, that todo item is just not there!"});
+	}
+	
+	// object.hasOwnProperty(exampleProperty) returns a true of false - lets us know if the object has the property
+	
+	if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) { 
+		validAttributes.completed = body.completed;
+		
+	} else  if (body.hasOwnProperty('completed')) {
+		//never provided attribute		
+		return res.status(400).send();
+	} else
+
+	// Validates description
+	if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) { 
+		validAttributes.description = body.description;
+
+	// If not string or 0 long 
+	} else if (body.hasOwnProperty('description')) {
+		
+		return res.status(400).json({"error": "Your todo is not valid."});
+	}
+	
+	matchedTodo = _.extend(matchedTodo, validAttributes);
+	res.json(matchedTodo);
+
 });
 
 app.listen(PORT, function () {
