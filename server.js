@@ -1,6 +1,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
+var querystring = require('querystring');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -14,8 +15,25 @@ app.use(bodyParser.json()); //takes data posted and makes it JSON
 
 //GET /todos get request http /todos
 app.get('/todos', function (req, res){
-	res.json(todos);
+	var queryParams = req.query;      
+   	var filteredTodos = todos;
+
+   	console.log(queryParams);
+   	
+   	if(req.query.hasOwnProperty('completed') && req.query.completed === 'true') {
+   		console.log('Woot!');
+   		filteredTodos = _.where(filteredTodos, {completed: true});
+   	}
+
+   	if(req.query.hasOwnProperty('completed') && req.query.completed === 'false') {
+   		console.log('Woot!');
+   		filteredTodos = _.where(filteredTodos, {completed: false});
+   	} 
+
+	res.json(filteredTodos);
+
 });
+
 
 //GET /todos/:id
 app.get('/todos/:id', function (req, res){
@@ -117,6 +135,10 @@ app.put('/todos/:id', function (req,res) {
 	matchedTodo = _.extend(matchedTodo, validAttributes);
 	res.json(matchedTodo);
 
+});
+
+app.get('/', function (req, res){
+	res.send('Todo API Root');
 });
 
 app.listen(PORT, function () {
