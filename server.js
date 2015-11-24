@@ -61,6 +61,32 @@ app.post('/todos', function (req, res) {
 	res.json(body);
 });
 
+// DELETE todos/:id
+
+app.delete('/todos/:id', function (req, res) {
+    // Get the passed in id from the user to be removed
+    var todoId = Number(req.params.id);      
+    console.log('we are in delete');
+    // Get the object with the id passed in and assign it to matchedTodo
+	var matchedTodo = _.findWhere(todos, {id: todoId});
+
+	if (matchedTodo) {   		
+   		todos = _.without(todos, matchedTodo);   		
+   		res.json(matchedTodo);
+   		console.log('Yippee Found');
+   		res.status(200).send();
+   	} else {
+   		res.status(404).json({"error": "failed"});
+   		console.log('Hold on partner, that id does not exist!');
+    }
+	// without() takes an array and the subsequent arguments is the things to be removed
+	
+	
+
+	// Send back the new array with the matched object removed
+	
+});
+
 app.listen(PORT, function () {
 	console.log('Express listening on port' + PORT + '!');
 });
