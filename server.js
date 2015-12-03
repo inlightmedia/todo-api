@@ -1,7 +1,8 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
-var querystring = require('querystring');
+var db = require('./db.js');
+// var querystring = require('querystring');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -35,11 +36,8 @@ app.get('/todos', function(req, res) {
 	// }
 
 	if (req.query.hasOwnProperty('q') && req.query.q.length > 0) {
-
 		filteredTodos = _.filter(filteredTodos, function(object) {
-
-			return object.description.toLowerCase().indexOf(req.query.q.toLowerCase()) > -1; //indexOf only works with strings and returns a -1 if the string passed in is not in the string being parsed				
-
+			return object.description.toLowerCase().indexOf(req.query.q.toLowerCase()) > -1; //indexOf only works with strings and returns a -1 if the string passed in is not in the string being parsed
 		});
 	}
 
@@ -66,32 +64,61 @@ app.get('/', function(req, res) {
 	res.send('Todo API Root');
 });
 
-//POST REQUSET /todos - can take data
+//POST REQUEST /todos - can take data
 // needs body-parseer module to send JSON data with post
 app.post('/todos', function(req, res) {
-	var body = req.body;
+  // Gets rid of any other object keys that might get hacked in by hackers
+	var body = _.pick(req.body, 'description', 'completed');
 
-	if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-		return res.status(400).send();
-	}
-	// Trims off preceeding and trailing spaces in user generated description
-	body.description = body.description.trim();
+	// Takes the databse version of todo and creates a POST on that
+	db.todo.create(body).then(function (todo){
+		if (todo) {
+			if (todo.description.trim().length === 0) {
+				return res.status(400).send();
+			}
+			// Trims off preceeding and trailing spaces in user generated description
+			todo.description = todo.description.trim();
 
-	// Gets rid of any other object keys that might get hacked in by hackers
-	var pickedBody = _.pick(body, "description", "completed");
+			// Add this new filtered/picked code to the todos array
+			todos.push(todo);
 
-	// Add this new filtered/picked code to the todos array
-	todos.push(pickedBody);
+			// Creates the id property and gives it a value
+			todo.id = toDoNextId;
+
+			// Increase the value of id by 1 so that the next todo will have a different id
+			toDoNextId += 1;
+
+			// Send the new object as a POST
+			res.json(todo.toJSON());
+		}
+	}).catch(function (error) {
+			res.status(400).json(e);
+	});
 
 
-	// Creates the id property and gives it a value
-	pickedBody.id = toDoNextId;
+	// OLD NON PERSISTENT DATABASE POST THAT REQUIED POSTMAN
 
-	// Increase the value of id by 1 so that the next todo will have a different id
-	toDoNextId += 1;
-
-	// Send the new object as a POST
-	res.json(body);
+	// if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
+	// 	return res.status(400).send();
+	// }
+	// // Trims off preceeding and trailing spaces in user generated description
+	// body.description = body.description.trim();
+	//
+	// // Gets rid of any other object keys that might get hacked in by hackers
+	// var pickedBody = _.pick(body, "description", "completed");
+	//
+	// // Add this new filtered/picked code to the todos array
+	// todos.push(pickedBody);
+	//
+	//
+	// // Creates the id property and gives it a value
+	// pickedBody.id = toDoNextId;
+	//
+	// // Increase the value of id by 1 so that the next todo will have a different id
+	// toDoNextId += 1;
+	//
+	// // Send the new object as a POST
+	// res.json(body);
 });
 
 // DELETE todos/:id
@@ -126,6 +153,7 @@ app.put('/todos/:id', function(req, res) {
 	var matchedTodo = _.findWhere(todos, {
 		id: todoId
 	});
+
 	var body = _.pick(req.body, "description", "completed");
 	var validAttributes = {};
 
@@ -139,9 +167,8 @@ app.put('/todos/:id', function(req, res) {
 
 	if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
 		validAttributes.completed = body.completed;
-
 	} else if (body.hasOwnProperty('completed')) {
-		//never provided attribute		
+		//never provided attribute
 		return res.status(400).send();
 	} else
 
@@ -149,7 +176,7 @@ app.put('/todos/:id', function(req, res) {
 	if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
 		validAttributes.description = body.description;
 
-		// If not string or 0 long 
+		// If not string or 0 long
 	} else if (body.hasOwnProperty('description')) {
 
 		return res.status(400).json({
@@ -166,6 +193,8 @@ app.get('/', function(req, res) {
 	res.send('Todo API Root');
 });
 
-app.listen(PORT, function() {
-	console.log('Express listening on port' + PORT + '!');
+db.sequelize.sync().then(function () {
+	app.listen(PORT, function () {
+		console.log('Express listening on port' + PORT + '!');
+	});
 });
