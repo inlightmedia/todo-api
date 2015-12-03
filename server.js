@@ -49,15 +49,16 @@ app.get('/todos', function(req, res) {
 //GET /todos/:id
 app.get('/todos/:id', function(req, res) {
 	var todoId = Number(req.params.id);
-	var matchedTodo = _.findWhere(todos, {
-		id: todoId
-	});
 
-	if (matchedTodo) {
-		res.json(matchedTodo);
-	} else {
-		res.status(404).send();
-	}
+	db.todo.findById(todoId).then(function(todo) {
+		if (todo){
+			res.status(200).json(todo);
+		} else {
+			res.status(404).json({'Message':'Todo not found'});
+		}
+	}, function(error){
+		res.status(500).json(error);
+	});
 });
 
 app.get('/', function(req, res) {
