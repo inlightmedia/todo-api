@@ -103,19 +103,37 @@ app.post('/todos', function(req, res) {
 app.delete('/todos/:id', function(req, res) {
   // Get the passed in id from the user to be removed
   var todoId = Number(req.params.id);
-  // Get the object with the id passed in and assign it to matchedTodo
-  var matchedTodo = _.findWhere(todos, {
-    id: todoId
+
+  db.todo.destroy({
+    where: {
+      id: todoId
+    }
+  }).then(function(itemsToDelete){
+    if (itemsToDelete) {
+      res.status(200).json('Your (' + itemsToDelete + ') todo with the id of ' + todoId + ' has been deleted.');
+    } else {
+      res.status(404).json({
+        "error": "Hold on partner, that id does not exist!"
+      });
+    }
+  }, function(e){
+    // Sends a server error 500 in case there is trouble connecting to server (rather than crashing).
+    res.status(500).send();
   });
 
-  if (matchedTodo) {
-    todos = _.without(todos, matchedTodo);
-    res.json(matchedTodo);
-  } else {
-    res.status(404).json({
-      "error": "Hold on partner, that id does not exist!"
-    });
-  }
+  // Get the object with the id passed in and assign it to matchedTodo
+  // var matchedTodo = _.findWhere(todos, {
+  //   id: todoId
+  // });
+  //
+  // if (matchedTodo) {
+  //   todos = _.without(todos, matchedTodo);
+  //   res.json(matchedTodo);
+  // } else {
+  //   res.status(404).json({
+  //     "error": "Hold on partner, that id does not exist!"
+  //   });
+  // }
   // without() takes an array and the subsequent arguments is the things to be removed
 
   // Send back the new array with the matched object removed
