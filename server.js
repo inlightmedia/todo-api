@@ -2,11 +2,9 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
-// var querystring = require('querystring');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
-
 
 var todos = [];
 var toDoNextId = 1;
@@ -21,16 +19,20 @@ app.get('/todos', function(req, res) {
 
   var where = {};
 
+  // if the query string contains completed get the string value 'true' or 'false' and convert it to a boolean value
+  // add this completed: boolean value to the where object
   if (query.hasOwnProperty('completed')) {
     where.completed = nowBoolean;
   }
 
+  // If there is a q query string and it contains something then add the query string value to the where.description object key
   if (query.hasOwnProperty('q') && query.q.length > 0) {
     where.description = {
-      $like: '%' + query.q + '%'
+      $like: '%' + query.q + '%' //$iLike is an option that works with postgres only but is case insensitive, $like is case sensitive in PG
     };
   }
 
+  //  Use the where functionality of sequelize to search db.todo using the where object query parameters
   db.todo.findAll({
     where: where
   }).then(function (todos) {
@@ -41,7 +43,7 @@ app.get('/todos', function(req, res) {
 
 });
 
-
+// Get all todos that match the given id parameter
 //GET /todos/:id
 app.get('/todos/:id', function(req, res) {
   var todoId = Number(req.params.id);
@@ -94,30 +96,6 @@ app.post('/todos', function(req, res) {
     res.status(400).json(e);
   });
 
-
-  // OLD NON PERSISTENT DATABASE POST THAT REQUIED POSTMAN
-
-  // if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-  // 	return res.status(400).send();
-  // }
-  // // Trims off preceeding and trailing spaces in user generated description
-  // body.description = body.description.trim();
-  //
-  // // Gets rid of any other object keys that might get hacked in by hackers
-  // var pickedBody = _.pick(body, "description", "completed");
-  //
-  // // Add this new filtered/picked code to the todos array
-  // todos.push(pickedBody);
-  //
-  //
-  // // Creates the id property and gives it a value
-  // pickedBody.id = toDoNextId;
-  //
-  // // Increase the value of id by 1 so that the next todo will have a different id
-  // toDoNextId += 1;
-  //
-  // // Send the new object as a POST
-  // res.json(body);
 });
 
 // DELETE todos/:id
@@ -125,7 +103,6 @@ app.post('/todos', function(req, res) {
 app.delete('/todos/:id', function(req, res) {
   // Get the passed in id from the user to be removed
   var todoId = Number(req.params.id);
-  console.log('we are in delete');
   // Get the object with the id passed in and assign it to matchedTodo
   var matchedTodo = _.findWhere(todos, {
     id: todoId
@@ -140,8 +117,6 @@ app.delete('/todos/:id', function(req, res) {
     });
   }
   // without() takes an array and the subsequent arguments is the things to be removed
-
-
 
   // Send back the new array with the matched object removed
 
