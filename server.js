@@ -67,6 +67,7 @@ app.get('/', function(req, res) {
 
 //POST REQUEST /todos - can take data
 // needs body-parseer module to send JSON data with post
+
 app.post('/todos', function(req, res) {
   // Gets rid of any other object keys that might get hacked in by hackers
   var body = _.pick(req.body, 'description', 'completed');
@@ -76,21 +77,9 @@ app.post('/todos', function(req, res) {
     if (todo) {
       if (todo.description.trim().length === 0) {
         return res.status(400).send();
+      } else {
+        res.json(todo.toJSON());
       }
-      // Trims off preceeding and trailing spaces in user generated description
-      todo.description = todo.description.trim();
-
-      // Add this new filtered/picked code to the todos array
-      todos.push(todo);
-
-      // Creates the id property and gives it a value
-      todo.id = toDoNextId;
-
-      // Increase the value of id by 1 so that the next todo will have a different id
-      toDoNextId += 1;
-
-      // Send the new object as a POST
-      res.json(todo.toJSON());
     }
   }).catch(function(error) {
     res.status(400).json(e);
@@ -98,6 +87,15 @@ app.post('/todos', function(req, res) {
 
 });
 
+app.post('/users', function(req, res) {
+  var body = _.pick(req.body, 'email', 'password');
+
+  db.user.create(body).then(function(user){
+    res.json(user);
+  }, function(e){
+    res.status(400).json(e);
+  });
+});
 // DELETE todos/:id
 
 app.delete('/todos/:id', function(req, res) {
@@ -121,6 +119,8 @@ app.delete('/todos/:id', function(req, res) {
     res.status(500).send();
   });
 });
+
+// UPDATE Todos by ID Using Sequelize
 
 app.put('/todos/:id', function(req, res) {
   var todoId = Number(req.params.id);
