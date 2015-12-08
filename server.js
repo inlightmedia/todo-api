@@ -120,66 +120,34 @@ app.delete('/todos/:id', function(req, res) {
     // Sends a server error 500 in case there is trouble connecting to server (rather than crashing).
     res.status(500).send();
   });
-
-  // Get the object with the id passed in and assign it to matchedTodo
-  // var matchedTodo = _.findWhere(todos, {
-  //   id: todoId
-  // });
-  //
-  // if (matchedTodo) {
-  //   todos = _.without(todos, matchedTodo);
-  //   res.json(matchedTodo);
-  // } else {
-  //   res.status(404).json({
-  //     "error": "Hold on partner, that id does not exist!"
-  //   });
-  // }
-  // without() takes an array and the subsequent arguments is the things to be removed
-
-  // Send back the new array with the matched object removed
-
 });
 
 app.put('/todos/:id', function(req, res) {
   var todoId = Number(req.params.id);
-
-  var matchedTodo = _.findWhere(todos, {
-    id: todoId
-  });
-
   var body = _.pick(req.body, "description", "completed");
-  var validAttributes = {};
+  var attributes = {};
 
-  if (!matchedTodo) {
-    return res.status(404).json({
-      "error": "Sorry, that todo item is just not there!"
-    });
+  if (body.hasOwnProperty('completed')) {
+    attributes.completed = body.completed;
   }
 
-  // object.hasOwnProperty(exampleProperty) returns a true of false - lets us know if the object has the property
-
-  if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-    validAttributes.completed = body.completed;
-  } else if (body.hasOwnProperty('completed')) {
-    //never provided attribute
-    return res.status(400).send();
-  } else
-
-  // Validates description
-  if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-    validAttributes.description = body.description;
-
-    // If not string or 0 long
-  } else if (body.hasOwnProperty('description')) {
-
-    return res.status(400).json({
-      "error": "Your todo is not valid."
-    });
+  if (body.hasOwnProperty('description')) {
+    attributes.description = body.description;
   }
 
-  matchedTodo = _.extend(matchedTodo, validAttributes);
-  res.json(matchedTodo);
-
+  db.todo.findById(todoId).then(function(todo){
+    if (todo) {
+      todo.update(attributes).then(function(todo){
+        res.json(todo);
+      }, function(e){
+        res.status(400).json(e);
+      });
+    } else {
+      res.status(404).send();
+    }
+  }, function(e){
+    res.status(500).send();
+  });
 });
 
 app.get('/', function(req, res) {
