@@ -15,5 +15,13 @@ module.exports = function (sequelize, DataTypes){
   		allowNull: false, //for required fields
   		defaultValue: false
   	}
+  }, {
+    hooks: { // hooks run some code on the object before or after an event such as Create or Validate
+      beforeCreate: function(todo, options){
+        if (typeof todo.description === 'string'){
+          todo.description = todo.description.trim();
+        }
+      }
+    }
   });
 };
