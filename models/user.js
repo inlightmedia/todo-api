@@ -3,7 +3,7 @@ var _ = require('underscore');
 
 
 module.exports = function(sequelize, DataTypes){
-  return  sequelize.define('user', {
+  var user = sequelize.define('user', {
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -42,11 +42,35 @@ module.exports = function(sequelize, DataTypes){
         }
       }
     },
-    instanceMethods: {
+    classMethods: {
+      authenticate: function (body) {
+        return new Promise(function(resolve, reject) {
+          if (typeof body.email !== 'string'  && typeof body.password !== 'string') {
+            reject();
+          }
+
+          user.findOne({
+            where: {
+              email: body.email
+            }
+          }).then(function (user) {
+            if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) { //get is a part of sequelize and it returns a value when passed a key (it takes a string) - bcrypt.compareSync compared the password you are passing in the the password of the email that was passed in that is already in the database and is salted and hashed
+                return reject();
+            }
+            resolve(user);
+          }, function (e) {
+            reject();
+          });
+        });
+      }
+    },
+    instanceMethods: { //hides the password and other sensitive database columns
       toPublicJSON: function () {
         var json = this.toJSON();
         return _.pick(json, "id","email","updatedAt","createdAt");
       }
     }
   });
+
+  return user;
 };

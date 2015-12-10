@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
+var bcrypt = require('bcrypt');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -35,11 +36,11 @@ app.get('/todos', function(req, res) {
   //  Use the where functionality of sequelize to search db.todo using the where object query parameters
   db.todo.findAll({
     where: where
-  }).then(function (todos) {
+  }).then(function(todos) {
     res.json(todos);
-  }, function(e){
-		res.status(500).send();
-	});
+  }, function(e) {
+    res.status(500).send();
+  });
 
 });
 
@@ -90,12 +91,25 @@ app.post('/todos', function(req, res) {
 app.post('/users', function(req, res) {
   var body = _.pick(req.body, 'email', 'password');
 
-  db.user.create(body).then(function(user){
+  db.user.create(body).then(function(user) {
     res.json(user.toPublicJSON());
-  }, function(e){
+  }, function(e) {
     res.status(400).json(e);
   });
 });
+
+//POST /user/login
+
+app.post('/users/login', function(req, res) {
+  var body = _.pick(req.body, "email", "password");
+
+  db.user.authenticate(body).then(function(user) {
+    res.json(user.toPublicJSON());
+  }, function(e) {
+    res.status(401).send();
+  });
+});
+
 // DELETE todos/:id
 
 app.delete('/todos/:id', function(req, res) {
@@ -106,7 +120,7 @@ app.delete('/todos/:id', function(req, res) {
     where: {
       id: todoId
     }
-  }).then(function(itemsToDelete){
+  }).then(function(itemsToDelete) {
     if (itemsToDelete) {
       res.status(200).json('Your (' + itemsToDelete + ') todo with the id of ' + todoId + ' has been deleted.');
     } else {
@@ -114,7 +128,7 @@ app.delete('/todos/:id', function(req, res) {
         "error": "Hold on partner, that id does not exist!"
       });
     }
-  }, function(e){
+  }, function(e) {
     // Sends a server error 500 in case there is trouble connecting to server (rather than crashing).
     res.status(500).send();
   });
@@ -135,17 +149,17 @@ app.put('/todos/:id', function(req, res) {
     attributes.description = body.description;
   }
 
-  db.todo.findById(todoId).then(function(todo){
+  db.todo.findById(todoId).then(function(todo) {
     if (todo) {
-      todo.update(attributes).then(function(todo){
+      todo.update(attributes).then(function(todo) {
         res.json(todo);
-      }, function(e){
+      }, function(e) {
         res.status(400).json(e);
       });
     } else {
       res.status(404).send();
     }
-  }, function(e){
+  }, function(e) {
     res.status(500).send();
   });
 });
@@ -154,7 +168,7 @@ app.get('/', function(req, res) {
   res.send('Todo API Root');
 });
 
-db.sequelize.sync({force: true}).then(function() {
+db.sequelize.sync( {force: true}).then(function() {
   app.listen(PORT, function() {
     console.log('Express listening on port' + PORT + '!');
   });
