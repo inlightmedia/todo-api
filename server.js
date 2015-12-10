@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require('bcrypt');
+var middleware = require('./middleware.js')(db); //middleware is a function and we are passing in db right from the start
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -13,8 +14,12 @@ var toDoNextId = 1;
 // Middleware
 app.use(bodyParser.json()); //takes data posted and makes it JSON
 
-//GET /todos get request http /todos
-app.get('/todos', function(req, res) {
+app.get('/', function(req, res) {
+    res.send('Todo API Root');
+});
+
+//GET /todos?completed=false$q=work
+app.get('/todos', middleware.requireAuthentication, function(req, res) {
     var query = req.query;
     var nowBoolean = ('true' == query.completed); //this converts the string 'true' to true and false to 'false'
 
@@ -46,7 +51,7 @@ app.get('/todos', function(req, res) {
 
 // Get all todos that match the given id parameter
 //GET /todos/:id
-app.get('/todos/:id', function(req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todoId = Number(req.params.id);
 
     db.todo.findById(todoId).then(function(todo) {
@@ -62,14 +67,10 @@ app.get('/todos/:id', function(req, res) {
     });
 });
 
-app.get('/', function(req, res) {
-    res.send('Todo API Root');
-});
-
 //POST REQUEST /todos - can take data
 // needs body-parseer module to send JSON data with post
 
-app.post('/todos', function(req, res) {
+app.post('/todos', middleware.requireAuthentication, function(req, res) {
     // Gets rid of any other object keys that might get hacked in by hackers
     var body = _.pick(req.body, 'description', 'completed');
 
@@ -90,7 +91,7 @@ app.post('/todos', function(req, res) {
 
 // DELETE todos/:id
 
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
     // Get the passed in id from the user to be removed
     var todoId = Number(req.params.id);
 
@@ -114,7 +115,7 @@ app.delete('/todos/:id', function(req, res) {
 
 // UPDATE Todos by ID Using Sequelize
 
-app.put('/todos/:id', function(req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todoId = Number(req.params.id);
     var body = _.pick(req.body, "description", "completed");
     var attributes = {};
@@ -142,9 +143,6 @@ app.put('/todos/:id', function(req, res) {
     });
 });
 
-app.get('/', function(req, res) {
-    res.send('Todo API Root');
-});
 
 /////////////// USERS SECTION //////////////
 
