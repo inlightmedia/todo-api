@@ -14,16 +14,22 @@ var toDoNextId = 1;
 // Middleware
 app.use(bodyParser.json()); //takes data posted and makes it JSON
 
+
 app.get('/', function(req, res) {
     res.send('Todo API Root');
 });
 
-//GET /todos?completed=false$q=work
+// COMPONENT TITLE: GET ALL TODOS USING QUERY STRINGS AND PARAMETERS
+// COMPONENT DESCRIPTION: Get all todos and optionally use given passed in parameters after the ? to filter results
+// REST API: GET /todos?completed=false$q=work
+
 app.get('/todos', middleware.requireAuthentication, function(req, res) {
     var query = req.query;
     var nowBoolean = ('true' == query.completed); //this converts the string 'true' to true and false to 'false'
 
-    var where = {};
+    var where = {
+        userId: req.user.id
+    };
 
     // if the query string contains completed get the string value 'true' or 'false' and convert it to a boolean value
     // add this completed: boolean value to the where object
@@ -49,12 +55,19 @@ app.get('/todos', middleware.requireAuthentication, function(req, res) {
 
 });
 
-// Get all todos that match the given id parameter
-//GET /todos/:id
+// COMPONENT TITLE: GET TODOS BY ID
+// COMPONENT DESCRIPTION: Get all todos that match the given id parameter
+// REST API: GET /todos/:id
+
 app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todoId = Number(req.params.id);
 
-    db.todo.findById(todoId).then(function(todo) {
+    db.todo.findOne({
+        where: {
+            id: todoId,
+            userId: req.user.id
+        }
+    }).then(function(todo) {
         if (todo) {
             res.status(200).json(todo);
         } else {
@@ -67,8 +80,11 @@ app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
     });
 });
 
-//POST REQUEST /todos - can take data
-// needs body-parseer module to send JSON data with post
+
+// COMPONENT TITLE: POST A NEW TO-DO
+// COMPONENT DESCRIPTION: Post a new todo that is associated with a user ID
+// REST API: POST /todos
+// Note: needs body-parseer module to send JSON data with post (This allow postman to send in data via the REST body)
 
 app.post('/todos', middleware.requireAuthentication, function(req, res) {
     // Gets rid of any other object keys that might get hacked in by hackers
@@ -89,7 +105,9 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
 
 });
 
-// DELETE todos/:id
+// COMPONENT TITLE: DELETE TODOS BY ID
+// COMPONENT DESCRIPTION: Delete the todo that matches the given id
+// REST API: DELETE /todos/:id
 
 app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
     // Get the passed in id from the user to be removed
@@ -97,7 +115,8 @@ app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
 
     db.todo.destroy({
         where: {
-            id: todoId
+            id: todoId,
+            userId: req.user.id
         }
     }).then(function(itemsToDelete) {
         if (itemsToDelete) {
@@ -113,7 +132,9 @@ app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
     });
 });
 
-// UPDATE Todos by ID Using Sequelize
+// COMPONENT TITLE: UPDATE TO-DO BY ID
+// COMPONENT DESCRIPTION: Update the Todo that matches a given id
+// REST API: PUT /todos/:id
 
 app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
     var todoId = Number(req.params.id);
@@ -128,7 +149,12 @@ app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
         attributes.description = body.description;
     }
 
-    db.todo.findById(todoId).then(function(todo) {
+    db.todo.findOne({
+        where:{
+            id: todoId,
+            userId: req.user.id
+        }
+    }).then(function(todo) {
         if (todo) {
             todo.update(attributes).then(function(todo) {
                 res.json(todo);
