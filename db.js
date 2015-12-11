@@ -19,7 +19,9 @@ var db = {};
 
 db.todo = sequelize.import(__dirname + '/models/todo.js'); //load models from other files
 db.user = sequelize.import(__dirname + '/models/user.js'); //load models from other files
+db.token = sequelize.import(__dirname + '/models/token.js'); //load models from other files
 db.sequelize = sequelize;
+
 //db.Sequelize = Sequelize;
 
 db.todo.belongsTo(db.user);
