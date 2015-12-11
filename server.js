@@ -76,14 +76,14 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
 
     // Takes the databse version of todo and creates a POST on that
     db.todo.create(body).then(function(todo) {
-        if (todo) {
-            if (todo.description.trim().length === 0) {
-                return res.status(400).send();
-            } else {
-                res.json(todo.toJSON());
-            }
-        }
-    }).catch(function(error) {
+
+        req.user.addTodo(todo).then(function () {
+            return todo.reload();
+        }).then(function (todo) {
+            res.json(todo.toJSON());
+        });
+
+    }, function(e) {
         res.status(400).json(e);
     });
 
@@ -177,7 +177,7 @@ app.post('/users/login', function(req, res) {
 // Setup Sequelize
 
 db.sequelize.sync({
-    force: true
+    //force: true
 }).then(function() {
     app.listen(PORT, function() {
         console.log('Express listening on port' + PORT + '!');
